@@ -17,6 +17,7 @@ BarWidget {
   function open() { if (panelLoader.item) panelLoader.item.open() }
   function close() { if (panelLoader.item) panelLoader.item.close() }
   function toggle() { if (panelLoader.item) panelLoader.item.toggle() }
+  function openSelection() { if (panelLoader.item) panelLoader.item.openWithSelection() }
   function closeForPopoutSwitch() {
     if (panelLoader.item) panelLoader.item.closeForPopoutSwitch()
   }
@@ -51,6 +52,7 @@ BarWidget {
     function show(): void { root.open() }
     function hide(): void { root.close() }
     function toggle(): void { root.toggle() }
+    function lookupSelection(): void { root.openSelection() }
   }
 
   BarIconButton {
@@ -58,9 +60,10 @@ BarWidget {
     anchors.fill: parent
     bar: root.bar
     text: "󰗊"
-    tooltipText: "Thesaurus — look up the highlighted word"
+    tooltipText: "Thesaurus — left-click to type · right-click looks up the highlighted word"
     onPressed: function(buttonCode) {
       if (buttonCode === Qt.LeftButton) root.toggle()
+      else if (buttonCode === Qt.RightButton) root.openSelection()
     }
   }
 }

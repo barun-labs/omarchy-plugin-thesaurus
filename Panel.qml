@@ -35,8 +35,34 @@ Panel {
     return decodeURIComponent(url.indexOf("file://") === 0 ? url.substring(7) : url)
   }
 
+  // Always open to an empty field so the user types the word they want. The
+  // highlighted selection is deliberately ignored — it kept prefilling URLs.
   function open() {
     root.controller.show()
+    root.clearResult()
+    queryField.text = ""
+    queryField.prefilled = false
+  }
+
+  function clearResult() {
+    root.word = ""
+    root.definition = ""
+    root.example = ""
+    root.synonyms = []
+    root.antonyms = []
+    root.suggestions = []
+    root.errorKind = ""
+    root.loading = false
+  }
+
+  // Optional highlight-lookup: open and immediately look up the highlighted
+  // word (lookup.sh reads the selection). Bound to right-click / an IPC verb,
+  // so the default left-click stays empty.
+  function openWithSelection() {
+    root.controller.show()
+    root.clearResult()
+    queryField.text = ""
+    queryField.prefilled = false
     runLookup([])            // no arg -> lookup.sh reads the highlighted word
   }
 
@@ -75,8 +101,13 @@ Panel {
     root.antonyms = parsed.antonyms || []
     root.suggestions = parsed.suggestions || []
     root.errorKind = parsed.error ? String(parsed.error) : ""
-    // Keep the field showing the looked-up word, unless the user is mid-typing.
-    if (!queryField.activeFocus && root.word !== "") queryField.text = root.word
+    // Show the looked-up word in the field, unless the user is mid-typing a
+    // different one (empty field = selection lookup, safe to fill). Mark it
+    // prefilled so the next keystroke replaces the word instead of appending.
+    if (root.word !== "" && (queryField.text === "" || !queryField.activeFocus)) {
+      queryField.text = root.word
+      queryField.prefilled = true
+    }
   }
 
   Process {
@@ -117,27 +148,41 @@ Panel {
           id: queryField
           width: parent.width
           placeholderText: "Look up a word…"
-          text: root.word
           foreground: root.contentForeground
           font.family: root.contentFontFamily
+
+          // True when the field holds a looked-up word we filled in, not text
+          // the user typed. The first printable key then replaces it wholesale.
+          property bool prefilled: false
+
           Keys.onPressed: function(event) {
             if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
               root.lookupWord(queryField.text)
               event.accepted = true
-            } else if (event.key === Qt.Key_Escape) {
+              return
+            }
+            if (event.key === Qt.Key_Escape) {
               root.close()
               event.accepted = true
+              return
+            }
+            if (queryField.prefilled) {
+              queryField.prefilled = false
+              // Printable key (>= space): drop the looked-up word so the char
+              // starts a fresh query. Navigation/backspace fall through as edits.
+              if (event.text.length > 0 && event.text.charCodeAt(0) >= 0x20)
+                queryField.text = ""
             }
           }
         }
 
         // Status line for the loading / empty / offline paths.
         Text {
-          visible: root.loading || root.errorKind !== ""
+          visible: root.loading || root.errorKind !== "" || root.word === ""
           width: parent.width
           text: root.loading ? "Looking up…"
             : root.errorKind === "offline" ? "Offline — no lookup"
-            : root.errorKind === "empty" ? "Highlight a word, or type one above"
+            : root.word === "" ? "Type a word, then press Enter"
             : ""
           color: Util.alpha(root.contentForeground, 0.64)
           font.family: root.contentFontFamily
