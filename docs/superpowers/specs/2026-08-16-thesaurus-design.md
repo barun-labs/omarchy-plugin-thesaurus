@@ -104,8 +104,11 @@ Keybind lives in `~/.config/hypr/bindings.lua` (Lua config, "quattro" Omarchy),
 using the `o.bind(key, desc, cmd)` helper:
 
 ```lua
-o.bind("SUPER SHIFT + D", "Define word", "omarchy-shell shell toggle barun-labs.thesaurus")
+o.bind("SUPER + SHIFT + D", "Define word", "omarchy-shell shell toggle barun-labs.thesaurus")
 ```
+
+`o.bind`'s key format uses a `+` between every modifier (`SUPER + SHIFT + D`);
+Hyprland's own bind list displays the same shortcut as `SUPER SHIFT + D`.
 
 `SUPER SHIFT + D` is free (mnemonic: Define). Editing `bindings.lua` is a
 separate, user-confirmed step — not part of installing the plugin itself.
