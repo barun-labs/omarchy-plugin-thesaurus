@@ -116,7 +116,7 @@ Panel {
           placeholderText: "Look up a word…"
           text: root.word
           foreground: root.contentForeground
-          fontFamily: root.contentFontFamily
+          font.family: root.contentFontFamily
           Keys.onPressed: function(event) {
             if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
               root.lookupWord(queryField.text)
