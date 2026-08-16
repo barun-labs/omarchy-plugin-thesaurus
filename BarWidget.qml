@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import qs.Ui
 
 // Bar icon for the thesaurus. Left-click toggles the lookup panel; the same
