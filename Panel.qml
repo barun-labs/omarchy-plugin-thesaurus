@@ -24,6 +24,7 @@ Panel {
   property string example: ""
   property var synonyms: []
   property var antonyms: []
+  property var suggestions: []
   property string errorKind: ""
   property bool loading: false
 
@@ -71,6 +72,7 @@ Panel {
     root.example = String(parsed.example || "")
     root.synonyms = parsed.synonyms || []
     root.antonyms = parsed.antonyms || []
+    root.suggestions = parsed.suggestions || []
     root.errorKind = parsed.error ? String(parsed.error) : ""
     // Keep the field showing the looked-up word, unless the user is mid-typing.
     if (!queryField.activeFocus && root.word !== "") queryField.text = root.word
@@ -185,6 +187,45 @@ Panel {
             color: Util.alpha(root.contentForeground, 0.5)
             font.family: root.contentFontFamily
             font.pixelSize: Style.font.caption
+          }
+
+          // "Did you mean" — spelling suggestions when the word wasn't found.
+          Column {
+            visible: root.definition === "" && root.synonyms.length === 0
+                     && root.antonyms.length === 0 && root.suggestions.length > 0
+            width: parent.width
+            spacing: Style.space(6)
+
+            Text {
+              text: "Did you mean"
+              color: Util.alpha(root.contentForeground, 0.5)
+              font.family: root.contentFontFamily
+              font.pixelSize: Style.font.caption
+              font.bold: true
+            }
+
+            Flow {
+              width: parent.width
+              spacing: Style.space(10)
+              Repeater {
+                model: root.suggestions
+                Text {
+                  required property var modelData
+                  text: modelData
+                  color: sugMouse.containsMouse ? Color.accent : root.contentForeground
+                  font.family: root.contentFontFamily
+                  font.pixelSize: Style.font.body
+                  font.underline: sugMouse.containsMouse
+                  MouseArea {
+                    id: sugMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.lookupWord(modelData)
+                  }
+                }
+              }
+            }
           }
 
           PanelSeparator {

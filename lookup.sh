@@ -7,7 +7,7 @@
 #
 # Always prints ONE JSON object to stdout and exits 0, so the QML caller
 # parses a single, fixed shape on every path:
-#   {word, definition, example, synonyms[], antonyms[], error}
+#   {word, definition, example, synonyms[], antonyms[], suggestions[], error}
 #   error is one of: null, "empty", "offline".
 set -uo pipefail
 
@@ -23,15 +23,15 @@ word="$(printf '%s' "$word" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:s
 word="${word%%[[:space:]]*}"
 word="$(printf '%s' "$word" | sed -e 's/^[^[:alnum:]]*//' -e 's/[^[:alnum:]-]*$//')"
 
-emit() { # emit <error> <definition> <example> <syn-json-array> <ant-json-array>
+emit() { # emit <error> <definition> <example> <syn-json> <ant-json> <sug-json>
   jq -cn --arg w "$word" --arg err "$1" --arg def "$2" --arg ex "$3" \
-     --argjson syn "$4" --argjson ant "$5" \
+     --argjson syn "$4" --argjson ant "$5" --argjson sug "$6" \
      '{word:$w, definition:$def, example:$ex, synonyms:$syn, antonyms:$ant,
-       error:(if $err=="" then null else $err end)}'
+       suggestions:$sug, error:(if $err=="" then null else $err end)}'
 }
 
 if [[ -z "$word" ]]; then
-  emit "empty" "" "" "[]" "[]"
+  emit "empty" "" "" "[]" "[]" "[]"
   exit 0
 fi
 
@@ -44,7 +44,7 @@ net=$?
 ant_raw="$(curl -fsS --max-time 6 "https://api.datamuse.com/words?max=8&rel_ant=$enc" 2>/dev/null)"
 
 if [[ $net -ne 0 && -z "$syn_raw" ]]; then
-  emit "offline" "" "" "[]" "[]"
+  emit "offline" "" "" "[]" "[]" "[]"
   exit 0
 fi
 
@@ -60,4 +60,12 @@ if [[ -n "$dict_raw" ]] && printf '%s' "$dict_raw" | jq -e 'type=="array"' >/dev
   ex="$(printf '%s' "$dict_raw" | jq -r 'first(.[].meanings[].definitions[] | select(.example) | .example) // ""' 2>/dev/null)"
 fi
 
-emit "" "$def" "$ex" "$syn" "$ant"
+# Nothing matched — offer spelling suggestions ("did you mean").
+sug="[]"
+if [[ -z "$def" && "$syn" == "[]" && "$ant" == "[]" ]]; then
+  sug_raw="$(curl -fsS --max-time 6 "https://api.datamuse.com/sug?s=$enc&max=5" 2>/dev/null)"
+  sug="$(printf '%s' "${sug_raw:-[]}" | jq -c --arg w "$word" \
+        '[.[].word | select(ascii_downcase != ($w|ascii_downcase))]' 2>/dev/null || echo '[]')"
+fi
+
+emit "" "$def" "$ex" "$syn" "$ant" "$sug"

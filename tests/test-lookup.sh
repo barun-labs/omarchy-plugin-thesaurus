@@ -23,6 +23,14 @@ if curl -fsS --max-time 5 "https://api.datamuse.com/words?max=1&rel_syn=test" >/
   check "nonsense: valid json"     'printf "%s" "$out" | jq -e . >/dev/null 2>&1'
   check "nonsense: error==null"    '[ "$(printf "%s" "$out" | jq -r .error)" = "null" ]'
   check "nonsense: word preserved" '[ "$(printf "%s" "$out" | jq -r .word)" = "zxqwvyx" ]'
+
+  out="$("$sh" congenialr)"
+  check "typo: valid json"        'printf "%s" "$out" | jq -e . >/dev/null 2>&1'
+  check "typo: error==null"       '[ "$(printf "%s" "$out" | jq -r .error)" = "null" ]'
+  check "typo: has suggestions"   '[ "$(printf "%s" "$out" | jq ".suggestions|length")" -gt 0 ]'
+  check "typo: suggests congenial" 'printf "%s" "$out" | jq -e ".suggestions|index(\"congenial\")" >/dev/null'
+
+  check "word: suggestions==[]"   '[ "$(printf "%s" "$("$sh" perfidious | jq -c .suggestions)")" = "[]" ]'
 else
   echo "skip - network cases (offline)"
 fi
