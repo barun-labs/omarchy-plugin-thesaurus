@@ -6,6 +6,7 @@
   "author": "barun-labs",
   "license": "MIT",
   "description": "Highlight a word while reading and get its definition, an example, synonyms and antonyms.",
+  "repository": "https://github.com/barun-labs/omarchy-plugin-thesaurus",
   "kinds": ["bar-widget"],
   "entryPoints": { "barWidget": "BarWidget.qml" },
   "barWidget": {

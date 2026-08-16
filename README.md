@@ -39,11 +39,11 @@ it's there, enable it with:
 omarchy plugin enable barun-labs.thesaurus right
 ```
 
-If this plugin is published to a git repository, you can install it directly
-instead of placing the files by hand:
+Or install it directly from the repository instead of placing the files by
+hand:
 
 ```
-omarchy plugin add <repo-url> --enable
+omarchy plugin add https://github.com/barun-labs/omarchy-plugin-thesaurus.git --enable
 ```
 
 ## Keybind
