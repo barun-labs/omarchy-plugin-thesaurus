@@ -52,6 +52,7 @@ Panel {
   function lookupWord(text) {
     var w = String(text || "").trim()
     if (w === "") return
+    queryField.text = w
     runLookup([w])
   }
 
