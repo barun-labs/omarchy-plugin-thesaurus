@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "barun-labs.thesaurus",
+  "name": "Thesaurus",
+  "version": "0.1.0",
+  "author": "barun-labs",
+  "license": "MIT",
+  "description": "Highlight a word while reading and get its definition, an example, synonyms and antonyms.",
+  "kinds": ["bar-widget"],
+  "entryPoints": { "barWidget": "BarWidget.qml" },
+  "barWidget": {
+    "displayName": "Thesaurus",
+    "description": "Definition, example, synonyms and antonyms for the highlighted word",
+    "category": "Utilities",
+    "allowMultiple": false
+  }
+}
