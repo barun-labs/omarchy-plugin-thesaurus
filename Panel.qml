@@ -31,6 +31,7 @@ Panel {
   property string llmOutput: ""
   property string llmError: ""
   property bool llmLoading: false
+  property bool transformOpen: false
 
   // lookup.sh's absolute path. Qt.resolvedUrl gives a file:// URL; Process
   // needs a plain filesystem path.
@@ -255,6 +256,35 @@ Panel {
             MouseArea { id: expMouse; anchors.fill: parent; hoverEnabled: true
               cursorShape: Qt.PointingHandCursor
               onClicked: root.runLlm("explain", "") }
+          }
+          Text {
+            text: root.transformOpen ? "Transform ▾" : "Transform ▸"
+            color: xfMouse.containsMouse ? Color.accent : root.contentForeground
+            font.family: root.contentFontFamily
+            font.pixelSize: Style.font.body
+            MouseArea { id: xfMouse; anchors.fill: parent; hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onClicked: root.transformOpen = !root.transformOpen }
+          }
+        }
+
+        Flow {
+          visible: root.transformOpen && (root.word !== "" || queryField.text !== "")
+          width: parent.width
+          spacing: Style.space(12)
+          Repeater {
+            model: ["formalize", "simplify", "use-in-sentence", "translate"]
+            Text {
+              required property var modelData
+              text: modelData
+              color: kMouse.containsMouse ? Color.accent : Util.alpha(root.contentForeground, 0.8)
+              font.family: root.contentFontFamily
+              font.pixelSize: Style.font.body
+              font.underline: kMouse.containsMouse
+              MouseArea { id: kMouse; anchors.fill: parent; hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: { root.transformOpen = false; root.runLlm("transform", modelData) } }
+            }
           }
         }
 
