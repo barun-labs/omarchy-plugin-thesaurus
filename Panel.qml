@@ -68,6 +68,9 @@ Panel {
 
   function close() { root.controller.hide() }
   function toggle() { root.opened ? root.close() : root.open() }
+  // Toggle variant for the keybind: open looks up the highlighted word,
+  // second press closes. Left-click's plain toggle() stays empty-field.
+  function toggleSelection() { root.opened ? root.close() : root.openWithSelection() }
 
   function switchPanel(direction) {
     if (root.bar && typeof root.bar.switchPanelFrom === "function")

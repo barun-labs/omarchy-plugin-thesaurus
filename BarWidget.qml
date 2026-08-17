@@ -18,6 +18,7 @@ BarWidget {
   function close() { if (panelLoader.item) panelLoader.item.close() }
   function toggle() { if (panelLoader.item) panelLoader.item.toggle() }
   function openSelection() { if (panelLoader.item) panelLoader.item.openWithSelection() }
+  function toggleSelection() { if (panelLoader.item) panelLoader.item.toggleSelection() }
   function closeForPopoutSwitch() {
     if (panelLoader.item) panelLoader.item.closeForPopoutSwitch()
   }
@@ -53,6 +54,7 @@ BarWidget {
     function hide(): void { root.close() }
     function toggle(): void { root.toggle() }
     function lookupSelection(): void { root.openSelection() }
+    function toggleSelection(): void { root.toggleSelection() }
   }
 
   BarIconButton {
