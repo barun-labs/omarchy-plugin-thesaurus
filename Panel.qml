@@ -85,6 +85,16 @@ Panel {
   // second press closes. Left-click's plain toggle() stays empty-field.
   function toggleSelection() { root.opened ? root.close() : root.openWithSelection() }
 
+  // Open and immediately explain the highlighted selection via the LLM. Bound
+  // to the explainSelection IPC verb / a keybind.
+  function explainWithSelection() {
+    root.controller.show()
+    root.clearResult()
+    queryField.text = ""
+    queryField.prefilled = false
+    root.runLlm("explain", "")   // no word set yet -> llm.sh reads the selection
+  }
+
   function switchPanel(direction) {
     if (root.bar && typeof root.bar.switchPanelFrom === "function")
       return root.bar.switchPanelFrom(root.barIdentity, direction)

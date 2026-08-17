@@ -46,6 +46,38 @@ hand:
 omarchy plugin add https://github.com/barun-labs/omarchy-plugin-thesaurus.git --enable
 ```
 
+## Explain and Transform
+
+Beyond the dictionary lookup, the panel can call DeepSeek to explain slang,
+foreign words, or whole phrases the dictionary won't have an entry for. Click
+"Explain" in the panel, or highlight text and use a keybind (see below) to
+explain it directly. "Transform" offers formalize, simplify, use-in-sentence,
+and translate, each rewriting the current word or phrase in place.
+
+This needs a DeepSeek API key at `~/.config/deepseek/thesaurus-key`:
+
+```
+mkdir -p ~/.config/deepseek
+echo "sk-..." > ~/.config/deepseek/thesaurus-key
+chmod 600 ~/.config/deepseek/thesaurus-key
+```
+
+Without a key, Explain and Transform show a message instead of a result — the
+dictionary lookup (definition, synonyms, antonyms) still works normally, no
+key required.
+
+The model is `deepseek-chat`, and both the model and the transform's target
+translation language are constants at the top of `llm.sh`, so retargeting
+either is a one-line edit.
+
+To bind a key that explains whatever's highlighted without opening the panel
+manually first, add something like this to your Hyprland config:
+
+```
+# Omarchy keybind (user config) — highlight, then this key explains it:
+bind = SUPER, e, global, quickshell:barun-labs.thesaurus:explainSelection
+```
+
 ## Keybind
 
 The plugin doesn't bind a key on its own — you add one. Open
@@ -87,6 +119,9 @@ omarchy restart shell
 omarchy plugin remove barun-labs.thesaurus
 ```
 
-## Phase 2
+## Privacy note for Explain and Transform
 
-A translation mode is planned for a later phase. It isn't built yet.
+Unlike the dictionary lookup, Explain and Transform send the highlighted text
+(or whatever's in the query field) to DeepSeek's API over HTTPS, using your
+own key. Nothing is sent unless you trigger Explain or Transform — the plain
+dictionary lookup never touches DeepSeek.
