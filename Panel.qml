@@ -28,10 +28,19 @@ Panel {
   property string errorKind: ""
   property bool loading: false
 
+  property string llmOutput: ""
+  property string llmError: ""
+  property bool llmLoading: false
+
   // lookup.sh's absolute path. Qt.resolvedUrl gives a file:// URL; Process
   // needs a plain filesystem path.
   readonly property string helperPath: {
     var url = String(Qt.resolvedUrl("lookup.sh"))
+    return decodeURIComponent(url.indexOf("file://") === 0 ? url.substring(7) : url)
+  }
+
+  readonly property string llmHelperPath: {
+    var url = String(Qt.resolvedUrl("llm.sh"))
     return decodeURIComponent(url.indexOf("file://") === 0 ? url.substring(7) : url)
   }
 
@@ -53,6 +62,9 @@ Panel {
     root.suggestions = []
     root.errorKind = ""
     root.loading = false
+    root.llmOutput = ""
+    root.llmError = ""
+    root.llmLoading = false
   }
 
   // Optional highlight-lookup: open and immediately look up the highlighted
@@ -126,6 +138,39 @@ Panel {
     }
   }
 
+  function runLlm(mode, kind) {
+    if (llmProcess.running || lookupProcess.running) return
+    root.llmLoading = true
+    root.llmError = ""
+    root.llmOutput = ""
+    var args = [root.llmHelperPath, "--mode", mode]
+    if (kind && kind !== "") args = args.concat(["--kind", kind])
+    if (root.word !== "") args = args.concat([root.word])
+    llmProcess.command = ["bash"].concat(args)
+    llmProcess.running = true
+  }
+
+  function applyLlm(raw) {
+    var parsed
+    try { parsed = JSON.parse(raw) } catch (e) { parsed = null }
+    if (!parsed) { root.llmError = "offline"; return }
+    root.llmError = parsed.error ? String(parsed.error) : ""
+    root.llmOutput = root.llmError === "" ? String(parsed.output || "") : ""
+  }
+
+  Process {
+    id: llmProcess
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.applyLlm(text)
+    }
+    onExited: function(exitCode) {
+      root.llmLoading = false
+      if (exitCode !== 0 && root.llmError === "" && root.llmOutput === "")
+        root.llmError = "offline"
+    }
+  }
+
   KeyboardPanel {
     id: panel
     anchorItem: root.anchorItem
@@ -176,6 +221,32 @@ Panel {
               if (event.text.length > 0 && event.text.charCodeAt(0) >= 0x20)
                 queryField.text = ""
             }
+          }
+        }
+
+        Row {
+          visible: root.word !== "" || queryField.text !== ""
+          width: parent.width
+          spacing: Style.space(14)
+
+          // Reuse this inline for Define / Explain. Transform added in Task 4.
+          Text {
+            text: "Define"
+            color: defMouse.containsMouse ? Color.accent : root.contentForeground
+            font.family: root.contentFontFamily
+            font.pixelSize: Style.font.body
+            MouseArea { id: defMouse; anchors.fill: parent; hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onClicked: root.lookupWord(queryField.text !== "" ? queryField.text : root.word) }
+          }
+          Text {
+            text: "Explain"
+            color: expMouse.containsMouse ? Color.accent : root.contentForeground
+            font.family: root.contentFontFamily
+            font.pixelSize: Style.font.body
+            MouseArea { id: expMouse; anchors.fill: parent; hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onClicked: root.runLlm("explain", "") }
           }
         }
 
@@ -309,6 +380,52 @@ Panel {
                 wrapMode: Text.WordWrap
               }
             }
+          }
+        }
+
+        // LLM "Thinking…" line.
+        Text {
+          visible: root.llmLoading
+          width: parent.width
+          text: "Thinking…"
+          color: Util.alpha(root.contentForeground, 0.64)
+          font.family: root.contentFontFamily
+          font.pixelSize: Style.font.caption
+        }
+
+        // LLM error line (distinct messages per kind).
+        Text {
+          visible: !root.llmLoading && root.llmError !== ""
+          width: parent.width
+          text: root.llmError === "no-key"
+              ? "Add a DeepSeek key to enable Explain (see README)."
+            : root.llmError === "rate-limit" ? "Rate limited — try again shortly."
+            : root.llmError === "timeout" ? "Timed out — try again."
+            : "Offline — Explain unavailable."
+          color: Util.alpha(root.contentForeground, 0.64)
+          font.family: root.contentFontFamily
+          font.pixelSize: Style.font.caption
+          wrapMode: Text.WordWrap
+        }
+
+        // LLM output card.
+        Column {
+          visible: !root.llmLoading && root.llmError === "" && root.llmOutput !== ""
+          width: parent.width
+          spacing: Style.space(4)
+          Text {
+            width: parent.width
+            text: root.llmOutput
+            color: root.contentForeground
+            font.family: root.contentFontFamily
+            font.pixelSize: Style.font.body
+            wrapMode: Text.WordWrap
+          }
+          Text {
+            text: "via DeepSeek"
+            color: Util.alpha(root.contentForeground, 0.4)
+            font.family: root.contentFontFamily
+            font.pixelSize: Style.font.caption
           }
         }
       }
