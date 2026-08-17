@@ -149,12 +149,13 @@ Panel {
 
   function runLlm(mode, kind) {
     if (llmProcess.running || lookupProcess.running) return
+    var subject = queryField.text.trim() !== "" ? queryField.text.trim() : root.word
     root.llmLoading = true
     root.llmError = ""
     root.llmOutput = ""
     var args = [root.llmHelperPath, "--mode", mode]
     if (kind && kind !== "") args = args.concat(["--kind", kind])
-    if (root.word !== "") args = args.concat([root.word])
+    if (subject !== "") args = args.concat([subject])
     llmProcess.command = ["bash"].concat(args)
     llmProcess.running = true
   }
@@ -290,7 +291,8 @@ Panel {
 
         // Status line for the loading / empty / offline paths.
         Text {
-          visible: root.loading || root.errorKind !== "" || root.word === ""
+          visible: !root.llmLoading && root.llmError === "" && root.llmOutput === ""
+                   && (root.loading || root.errorKind !== "" || root.word === "")
           width: parent.width
           text: root.loading ? "Looking up…"
             : root.errorKind === "offline" ? "Offline — no lookup"
