@@ -123,6 +123,14 @@ Panel {
       queryField.text = root.word
       queryField.prefilled = true
     }
+
+    // Auto-fallback: dictionary found nothing usable (not an offline error) —
+    // ask the LLM to explain. Fires at most once per lookup.
+    if (root.errorKind === "" && root.definition === ""
+        && root.synonyms.length === 0 && root.antonyms.length === 0
+        && root.word !== "") {
+      root.runLlm("explain", "")
+    }
   }
 
   Process {
